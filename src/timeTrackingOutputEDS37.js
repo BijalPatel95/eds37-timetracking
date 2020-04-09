@@ -872,5 +872,5 @@ async function timeTrackingEmailOutput() {
     // Note that the following analysts have not yet submitted data for this week: Chris Webber, Eric Zhang.  [if everyone has submitted an entry for the week this should instead read: “Note that all analysts have submitted data for this week.  Go team!!”]
 
 }
-timeTrackingEmailOutput()
-// exports.default = timeTrackingEmailOutput;
+// timeTrackingEmailOutput()
+exports.default = timeTrackingEmailOutput;
