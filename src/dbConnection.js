@@ -1,7 +1,4 @@
-'use strict';
-var AWS = require('aws-sdk');
-AWS.config.update({region: 'us-east-1'});  
-const sql = require('mssql');
+ const sql = require('mssql');
 const dbConfig = require("./dbConfig")
 const awsSecretManager = require('./awsSecretManager'); 
 
