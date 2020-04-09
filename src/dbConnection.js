@@ -1,4 +1,8 @@
- const sql = require('mssql');
+require('dotenv').config();
+var AWS = require('aws-sdk');
+AWS.config.update({region: 'us-east-1'}); 
+
+const sql = require('mssql');
 const dbConfig = require("./dbConfig")
 const awsSecretManager = require('./awsSecretManager'); 
 
@@ -11,7 +15,7 @@ class Database{
         console.log(`Running query ${query}`);
         const result = await sql.query(query);
         sql.close();
-        console.log(result["recordset"]);
+        console.log('Result : ',result["recordset"]);
         return result["recordset"];
     } catch (e) {
         console.error(`Error in database: ${e}`);
