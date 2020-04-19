@@ -15,14 +15,14 @@ const query = {
         ), summary as(
         select 
         case when d.fieldValue != 'Long' and d.fieldValue != 'Short' then 'Others' else d.fieldValue end as category, case when max(d.fieldValue) = 'Long' then 1 when max(d.fieldValue) = 'Short' then 2 else 3 end  as sortOrder,
-        case when sum(Cast(h.fieldValue as float)) is null then 0 else sum(Cast(h.fieldValue as float)) end as timeSpentThisWeek from temp d
+        sum(Cast(h.fieldValue as float)) as timeSpentThisWeek from temp d
         LEFT JOIN temp h ON d.templateName = h.templateName AND d.projectName = h.projectName AND d.trackingPeriod = h.trackingPeriod AND h.timeTracker = 1
         where d.fieldName = 'Direction' or (d.templateName = 'Non Research' and d.timeTracker = 0)
         group by case when d.fieldValue != 'Long' and d.fieldValue != 'Short' then 'Others' else d.fieldValue end
         ), finalOutput as (
-        select *, case when (select timeSpentThisWeek from total) = 0 OR  (select timeSpentThisWeek from total) is null then '0%' else cast(round(timeSpentThisWeek / (select timeSpentThisWeek from total) * 100,0) as nvarchar)+'%' end  as  shareOfTimeSpend from summary
+        select *, case when (select timeSpentThisWeek from total) = 0 then '0%' else cast(round(timeSpentThisWeek / (select timeSpentThisWeek from total) * 100,0) as nvarchar)+'%' end  as  shareOfTimeSpend from summary
         UNION 
-        select category, sortOrder, case when timeSpentThisWeek is null then 0 else timeSpentThisWeek end , case when  (select timeSpentThisWeek from total) = 0 or  (select timeSpentThisWeek from total) is null then '0%' else shareOfTimeSpend end as shareOfTimeSpend from total
+        select category, sortOrder,timeSpentThisWeek, case when  (select timeSpentThisWeek from total) = 0 then '0%' else shareOfTimeSpend end as shareOfTimeSpend from total
         
         )
         
@@ -77,9 +77,9 @@ const query = {
         select sum(timeSpentThisWeek) as totalHours from gicsMappingTimeTracking
         ), gicsMappingTimeTrackingGroup as (
         select sector,
-        case when (select case when timeSpentThisWeek is null then 0 else timeSpentThisWeek end from tableSummaryTemp where category = 'Long') = 0 OR (select case when timeSpentThisWeek is null then 0 else timeSpentThisWeek end from tableSummaryTemp where category = 'Long') is null then 0 else round(sum(case when category = 'Long' then timeSpentThisWeek else 0 end )/ (select case when timeSpentThisWeek is null then 0 else timeSpentThisWeek end from tableSummaryTemp where category = 'Long') * 100,1) end shareOfTimeSpendOnLongs,
-        case when (select case when timeSpentThisWeek is null then 0 else timeSpentThisWeek end from tableSummaryTemp where category = 'Short') = 0 OR (select case when timeSpentThisWeek is null then 0 else timeSpentThisWeek end from tableSummaryTemp where category = 'Short') is null  then 0 else round(sum(case when category = 'Short' then timeSpentThisWeek else 0 end )/ (select case when timeSpentThisWeek is null then 0 else timeSpentThisWeek end from tableSummaryTemp where category = 'Short') * 100,1) end shareOfTimeSpendOnShort,
-        case when (select totalHours from total) = 0 OR (select totalHours from total) is null then 0 else round((sum(case when category = 'Long' then timeSpentThisWeek else 0 end) + sum(case when category = 'Short' then timeSpentThisWeek else 0 end ))/ (select totalHours from total) * 100,0) end as shareOfTotalTimeSpend
+        case when (select case when timeSpentThisWeek is null then 0 else timeSpentThisWeek end from tableSummaryTemp where category = 'Long') = 0 then 0 else round(sum(case when category = 'Long' then timeSpentThisWeek else 0 end )/ (select case when timeSpentThisWeek is null then 0 else timeSpentThisWeek end from tableSummaryTemp where category = 'Long') * 100,1) end shareOfTimeSpendOnLongs,
+        case when (select case when timeSpentThisWeek is null then 0 else timeSpentThisWeek end from tableSummaryTemp where category = 'Short') = 0 then 0 else round(sum(case when category = 'Short' then timeSpentThisWeek else 0 end )/ (select case when timeSpentThisWeek is null then 0 else timeSpentThisWeek end from tableSummaryTemp where category = 'Short') * 100,1) end shareOfTimeSpendOnShort,
+        case when (select totalHours from total) = 0 then 0 else round((sum(case when category = 'Long' then timeSpentThisWeek else 0 end) + sum(case when category = 'Short' then timeSpentThisWeek else 0 end ))/ (select totalHours from total) * 100,0) end as shareOfTotalTimeSpend
         from gicsMappingTimeTracking
         group by sector
         ), finalOutput as (
@@ -92,13 +92,15 @@ const query = {
         select 'Total'as sector,
         case when (select totalHours from total) = 0 then '0%' else cast((select sum(shareOfTimeSpendOnLongs) from gicsMappingTimeTrackingGroup)as varchar)+'%' end as shareOfTimeSpendOnLongs,
         case when (select totalHours from total) = 0 then '0%' else cast((select sum(shareOfTimeSpendOnShort) from gicsMappingTimeTrackingGroup) as varchar)+'%' end as shareOfTimeSpendOnShort,
-        case when (select totalHours from total) = 0 or (select totalHours from total) is null then '0%' else '100%' end as shareOfTotalTimeSpend
+        case when (select totalHours from total) = 0 then '0%' else '100%' end as shareOfTotalTimeSpend
         from total
         )
         
-        select *,case when (ROW_NUMBER() over (order by sector asc))%2 = 0 then 'border: 1px solid white !important; background:#dae5f4' else 'border: 1px solid white !important; background:#b8d1f3' end as style  from finalOutput`
+        select *,case when (ROW_NUMBER() over (order by sector asc))%2 = 0 then 'border: 1px solid white !important; background:#dae5f4' else 'border: 1px solid white !important; background:#b8d1f3' end as style  from finalOutput
 
-        
+
+
+`
     ,
     noInputUsernames: `
     select firstname +' '+ lastName as username from userFund 
@@ -106,5 +108,5 @@ const query = {
         select username from timeTrackingValues where trackingPeriod = (select max(trackingPeriod) from timeTrackingValues where username in (select username from userfund where fund = 'EDS37'))
     ) and username not in ('hound.eds','jcrusco','jsalinas','jauerbach','jsalinas','mventura','brian.sunshine')`
 }
-​
+
 module.exports = query;

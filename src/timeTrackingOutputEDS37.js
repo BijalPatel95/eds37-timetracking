@@ -840,8 +840,8 @@ async function timeTrackingEmailOutput() {
             // "cw@houndpartners.com",
             // "jsalinas@houndpartners.com",
             // "ezhang@houndpartners.com"
-            "bijal@equitydatascience.com",
-            "amit@equitydatascience.com"
+            "bijal@equitydatascience.com"
+            //,"amit@equitydatascience.com"
           ]
         },
         Message: {
